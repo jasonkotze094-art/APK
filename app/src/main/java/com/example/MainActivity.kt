@@ -103,6 +103,12 @@ import com.example.data.model.GeminiMarketIntelligence
 import com.example.data.model.MarketCitation
 import com.example.data.model.MarketDataFlowState
 import com.example.ui.components.LightweightPriceChart
+import com.example.ui.components.LiveMarketDashboardView
+import com.example.ui.components.CompactLiveSymbolCard
+import com.example.ui.components.FullLiveSymbolPriceCard
+import com.example.ui.components.GeneratedBuySellSignalCard
+import com.example.ui.components.DashboardStatsBar
+import com.example.ui.components.SimulatedPositionCard
 import com.example.ui.theme.BorderGray
 import com.example.ui.theme.BottomNavDark
 import com.example.ui.theme.CosmicDark
@@ -267,8 +273,8 @@ fun BottomNavigationBar(
             NavigationBarItem(
                 selected = currentScreen == ActiveScreen.HOME,
                 onClick = { onScreenSelected(ActiveScreen.HOME) },
-                icon = { Icon(Icons.Default.Info, contentDescription = "Home") },
-                label = { Text("Core", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
+                icon = { Icon(Icons.Default.Info, contentDescription = "Dashboard") },
+                label = { Text("Dashboard", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = accentColor,
                     selectedTextColor = accentColor,
@@ -295,7 +301,7 @@ fun BottomNavigationBar(
             NavigationBarItem(
                 selected = currentScreen == ActiveScreen.NEWS,
                 onClick = { onScreenSelected(ActiveScreen.NEWS) },
-                icon = { Icon(Icons.Default.List, contentDescription = "Intelligence & News") },
+                icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Intelligence & News") },
                 label = { Text("Intelligence", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = accentColor,
@@ -326,6 +332,86 @@ fun BottomNavigationBar(
 
 @Composable
 fun HomeScreen(viewModel: BotViewModel, accentColor: Color) {
+    var homeViewMode by remember { mutableStateOf("MARKET_DASHBOARD") } // "MARKET_DASHBOARD" vs "CYBORG_HUB"
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Mode Switcher Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF141414))
+                    .border(1.dp, BorderGray, RoundedCornerShape(20.dp))
+                    .padding(3.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val isDashboard = homeViewMode == "MARKET_DASHBOARD"
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isDashboard) accentColor else Color.Transparent)
+                            .clickable { homeViewMode = "MARKET_DASHBOARD" }
+                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                            .testTag("tab_market_dashboard"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "MARKET DASHBOARD",
+                            color = if (isDashboard) Color.Black else PrimaryWhite,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    val isHub = homeViewMode == "CYBORG_HUB"
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isHub) accentColor else Color.Transparent)
+                            .clickable { homeViewMode = "CYBORG_HUB" }
+                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                            .testTag("tab_cyborg_hub"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "CYBORG CONTROLLER",
+                            color = if (isHub) Color.Black else PrimaryWhite,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        if (homeViewMode == "MARKET_DASHBOARD") {
+            LiveMarketDashboardView(
+                viewModel = viewModel,
+                accentColor = accentColor,
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            CyborgControlHubView(
+                viewModel = viewModel,
+                accentColor = accentColor,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun CyborgControlHubView(
+    viewModel: BotViewModel,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
     val settings by viewModel.settingsState.collectAsState()
     val logs by viewModel.systemLogs.collectAsState()
     
@@ -343,11 +429,10 @@ fun HomeScreen(viewModel: BotViewModel, accentColor: Color) {
     )
 
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
-        
     ) {
         // Upper Title Header (Sophisticated Dark theme)
         item {

@@ -138,7 +138,29 @@ class ExampleUnitTest {
   }
 
   @Test
-  fun testEnrichCandlesWithRsi() {
+  fun testTechnicalAnalysisEmaAndPivots() {
+    val prices = listOf(10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0)
+    val ema = TechnicalAnalysis.calculateEMA(prices, 5)
+    assertTrue("EMA should be positive", ema > 10.0)
+
+    val candles = (1..10).map { i ->
+      CandleStickData(
+        timestamp = 1700000000000L + (i * 60000L),
+        open = 100.0 + i,
+        high = 110.0 + i,
+        low = 90.0 + i,
+        close = 105.0 + i,
+        volume = 50.0,
+        timeLabel = "10:$i"
+      )
+    }
+    val (support, resistance) = TechnicalAnalysis.calculatePivotLevels(candles, 100.0)
+    assertEquals(91.0, support, 0.01)
+    assertEquals(120.0, resistance, 0.01)
+  }
+
+  @Test
+  fun testMarketTrendSnapshotBuilder() {
     val candles = (1..20).map { i ->
       CandleStickData(
         timestamp = 1700000000000L + (i * 60000L),
@@ -151,12 +173,22 @@ class ExampleUnitTest {
       )
     }
 
-    val enriched = TechnicalAnalysis.enrichCandlesWithRsi(candles, period = 14)
-    assertEquals(20, enriched.size)
-    assertNull(enriched[0].rsi)
-    assertNull(enriched[13].rsi)
-    assertNotNull(enriched[14].rsi)
-    assertNotNull(enriched[19].rsi)
+    val snapshot = TechnicalAnalysis.buildMarketTrendSnapshot(
+      symbol = "XAUUSD",
+      timeframe = "M5",
+      currentPrice = 2345.50,
+      change24h = 1.45,
+      high24h = 2355.0,
+      low24h = 2330.0,
+      candles = candles
+    )
+
+    assertEquals("XAUUSD", snapshot.symbol)
+    assertEquals("M5", snapshot.timeframe)
+    assertEquals(2345.50, snapshot.currentPrice, 0.001)
+    assertNotNull(snapshot.currentRsi)
+    assertTrue(snapshot.momentumScore in 0..100)
+    assertTrue(snapshot.trendDirection.isNotEmpty())
   }
 }
 
