@@ -1,0 +1,6 @@
+{
+  "name": "The Clown Beast",
+  "description": "AI-powered high-tech Metatrader assistant trading bot scanner, generating smart buy sell signals using Google Search grounding and market indicators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
